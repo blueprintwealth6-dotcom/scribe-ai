@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScribeAI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700&family=Space+Grotesk:wght=500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Global CSS RESET */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html { width: 100%; height: 100%; background-color: #111; color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; overflow: hidden; }
+        .master-layout-container { display: flex; width: 100vw; height: 100vh; }
+        
+        /* SIDEBAR SECTION */
+        .sidebar-wrapper { width: 280px; min-width: 280px; background-color: #171717; display: flex; flex-direction: column; padding: 24px 16px; border-right: 1px solid #262626; height: 100%; }
+        .new-chat-btn { 
+            width: 100%; 
+            background: linear-gradient(135deg, #ff4500 0%, #ff6a00 100%); 
+            color: white; border: none; padding: 14px; border-radius: 10px; 
+            font-size: 15px; font-weight: 700; cursor: pointer; 
+            box-shadow: 0 4px 15px rgba(255, 69, 0, 0.2); transition: all 0.3s ease; 
+            font-family: 'Space Grotesk', sans-serif; text-align: center;
+        }
+        .new-chat-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255, 69, 0, 0.35); }
+        .sidebar-history { margin-top: 30px; flex-grow: 1; overflow-y: auto; }
+        .history-label { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 16px; }
+        .history-list { list-style: none; }
+        .history-item { padding: 12px; border-radius: 8px; cursor: pointer; color: #aaa; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 6px; transition: 0.2s; }
+        .history-item:hover { background-color: #222; color: #fff; }
+        
+        /* MAIN INTERFACE */
+        .app-main-layout { flex-grow: 1; display: flex; flex-direction: column; background-color: #111; height: 100%; width: 100%; overflow: hidden; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; border-bottom: 1px solid #262626; background-color: #111; width: 100%; }
+        .logo-container { display: flex; align-items: center; height: 45px; }
+        .scribe-svg-logo { height: 100%; width: auto; display: block; }
+        
+        .auth-buttons { display: flex; gap: 16px; align-items: center; }
+        .btn-link { background: none; border: none; color: #aaa; cursor: pointer; font-size: 15px; font-weight: 600; transition: 0.2s; text-decoration: none; }
+        .btn-link:hover { color: #fff; }
+        .btn-primary-sm { background-color: #ff4500; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .btn-primary-sm:hover { background-color: #e03e00; }
+        
+        /* CENTER DISPLAYS */
+        .page-block { flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; height: calc(100% - 73px); width: 100%; }
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px; overflow-y: auto; width: 100%; }
+        .welcome-section { text-align: center; width: 100%; }
+        .welcome-section h1 { font-size: 38px; font-weight: 700; color: #fff; font-family: 'Space Grotesk', sans-serif; }
+        
+        /* INPUT AREA */
+        .input-container-wrap { padding: 24px 40px; display: flex; justify-content: center; background-color: #111; width: 100%; }
+        .input-box-card { width: 100%; max-width: 760px; background: #171717; border: 1px solid #262626; border-radius: 16px; padding: 20px; }
+        .generation-modes-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .generation-modes { display: flex; gap: 8px; }
+        .mode-btn { background: transparent; color: #888; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 600; transition: 0.2s; }
+        .mode-btn.active { background: #262626; color: #fff; }
+        .advanced-settings { display: flex; gap: 8px; }
+        .settings-dropdown { background: #222; color: #fff; border: 1px solid #333; padding: 8px 12px; border-radius: 8px; font-size: 13px; outline: none; }
+        .input-field-container { display: flex; align-items: center; gap: 14px; width: 100%; }
+        #topicInput { flex-grow: 1; background: transparent; border: none; color: #fff; resize: none; outline: none; font-size: 16px; font-family: inherit; line-height: 1.5; min-height: 24px; }
+        #generateBtn { background: #fff; color: #000; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+        
+        /* OUTPUT AREA */
+        .result-area { width: 100%; max-width: 760px; background: #171717; padding: 28px; border-radius: 16px; border: 1px solid #262626; margin-bottom: 20px; }
+        .result-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #262626; padding-bottom: 12px; }
+        .result-header { font-weight: 700; color: #ff4500; font-size: 18px; font-family: 'Space Grotesk', sans-serif; }
+        .script-body { white-space: pre-wrap; color: #e5e5e5; line-height: 1.7; font-size: 15px; max-height: 400px; overflow-y: auto; }
+        .generated-image-element { width: 100%; max-height: 420px; border-radius: 12px; object-fit: contain; margin-top: 10px; border: 1px solid #333; display: block; background-color: #0b0b0b; }
+
+        /* AUTH CARD PANEL */
+        .auth-view-wrapper { display: flex; justify-content: center; align-items: center; width: 100%; height: calc(100vh - 80px); padding: 20px; }
+        .auth-card-panel { width: 100%; max-width: 490px; background: #171717; padding: 45px; border-radius: 20px; border: 1px solid #262626; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        .auth-card-panel h2 { font-size: 34px; font-weight: 700; margin-bottom: 8px; font-family: 'Space Grotesk', sans-serif; }
+        .auth-subtitle { color: #666; font-size: 14px; margin-bottom: 30px; }
+        .form-group-field { margin-bottom: 22px; }
+        .form-group-field label { display: block; font-size: 12px; font-weight: 600; color: #888; margin-bottom: 8px; text-transform: uppercase; }
+        .form-group-field input { width: 100%; padding: 15px; background: #222; border: 1px solid #333; border-radius: 10px; color: white; font-size: 15px; outline: none; }
+        .form-group-field input:focus { border-color: #ff4500; }
+        .auth-action-trigger-btn { width: 100%; padding: 15px; background: #ff4500; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+        .auth-switch-footer { margin-top: 24px; text-align: center; color: #666; font-size: 14px; }
+        .auth-switch-footer span { color: #ff4500; cursor: pointer; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="master-layout-container">
+        
+        <!-- SIDEBAR -->
+        <aside id="chatSidebar" class="sidebar-wrapper" style="display: none;">
+            <div class="sidebar-header"><button class="new-chat-btn" onclick="startNewChat()">+ New Chat</button></div>
+            <div class="sidebar-history"><div class="history-label">Recent History</div><ul class="history-list" id="historyList"></ul></div>
+        </aside>
+
+        <!-- MAIN APP FRAME -->
+        <div class="app-main-layout">
+            <header class="navbar">
+                <div class="logo-container" onclick="showMainPage()" style="cursor: pointer;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 100" class="scribe-svg-logo">
+                        <defs>
+                            <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#ff4500" /><stop offset="100%" stop-color="#ff7a00" />
+                            </linearGradient>
+                        </defs>
+                        <g transform="translate(10, 15)">
+                            <path d="M25 5 L55 5 L40 35 L10 35 Z" fill="url(#logoGrad)" />
+                            <path d="M40 35 L55 5 L55 65 L40 35 Z" fill="#fff" opacity="0.15" />
+                            <path d="M40 35 L70 35 L55 65 L25 65 Z" fill="url(#logoGrad)" />
+                            <circle cx="55" cy="20" r="4.5" fill="#fff" />
+                        </g>
+                        <text x="105" y="62" font-family="'Space Grotesk', sans-serif" font-size="42" font-weight="700" fill="#fff">Scribe</text>
+                        <text x="238" y="62" font-family="'Space Grotesk', sans-serif" font-size="42" font-weight="700" fill="url(#logoGrad)">AI</text>
+                    </svg>
+                </div>
+                <div class="auth-buttons" id="navAuthButtons">
+                    <button class="btn-link" onclick="navigateToAuth('login')">Sign In</button>
+                    <button class="btn-primary-sm" onclick="navigateToAuth('signup')">Sign Up</button>
+                </div>
+                <div class="auth-buttons" id="navLogoutButton" style="display: none;">
+                    <button class="btn-link" onclick="handleLogout()">Log Out</button>
+                </div>
+            </header>
+
+            <div id="mainInterfaceBlock" class="page-block">
+                <main class="main-content">
+                    <div class="welcome-section" id="welcomeSection"><h1>How can I help you create today?</h1></div>
+                    
+                    <!-- DISPLAY INTERFACE FOR SCRIPT/IMAGE -->
+                    <div class="result-area" id="resultContainer" style="display: none;">
+                        <div class="result-header-row">
+                            <div class="result-header" id="resultHeaderType">Output</div>
+                            <div>
+                                <button class="btn-link" id="copyActionBtn" onclick="copyToClipboard()">Copy</button>
+                                <button class="btn-link" onclick="downloadOutput()">Download</button>
+                            </div>
+                        </div>
+                        <div class="script-body" id="scriptOutput"></div>
+                    </div>
+                </main>
+                
+                <footer class="input-container-wrap">
+                    <div class="input-box-card">
+                        <div class="generation-modes-row">
+                            <div class="generation-modes">
+                                <button class="mode-btn active" id="mode-script" onclick="setGenerationMode('script')">Script</button>
+                                <button class="mode-btn" id="mode-question" onclick="setGenerationMode('question')">Ask AI</button>
+                                <button class="mode-btn" id="mode-image" onclick="setGenerationMode('image')">Create Image</button>
+                            </div>
+                            <div class="advanced-settings" id="settingsPanel">
+                                <select id="settingSize" class="settings-dropdown"><option value="16:9">Standard (16:9)</option><option value="9:16">Short/Reel (9:16)</option></select>
+                                <select id="settingTone" class="settings-dropdown"><option value="Professional">Professional</option><option value="Dynamic">Dynamic</option></select>
+                            </div>
+                        </div>
+                        <div class="input-field-container">
+                            <textarea id="topicInput" rows="1" placeholder="Enter topic for script..."></textarea>
+                            <div style="display: flex; align-items: center;">
+                                <div id="loadingText" style="display: none; color: #888; font-size: 13px; margin-right: 10px;">Creating...</div>
+                                <button id="generateBtn" onclick="handleGeneration()">➔</button>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            </div>
+
+            <!-- AUTH VIEWS -->
+            <div id="authPageBlock" style="display: none; flex-grow: 1;">
+                <div class="auth-view-wrapper">
+                    <div id="loginFormContainer" class="auth-card-panel">
+                        <h2>Welcome back</h2><div class="auth-subtitle">Sign in to your account</div>
+                        <div class="form-group-field"><label>Email Address</label><input type="email" id="loginEmail" placeholder="name@domain.com"></div>
+                        <div class="form-group-field"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••"></div>
+                        <button class="auth-action-trigger-btn" onclick="handleLogin()">Sign In</button>
+                        <div class="auth-switch-footer">Naya account? <span onclick="switchAuthView('signup')">Sign Up free</span></div>
+                    </div>
+                    <div id="signupFormContainer" class="auth-card-panel" style="display: none;">
+                        <h2>Create account</h2><div class="auth-subtitle">Start generating scripts seamlessly</div>
+                        <div class="form-group-field"><label>Email Address</label><input type="email" id="signupEmail" placeholder="name@domain.com"></div>
+                        <div class="form-group-field"><label>Password</label><input type="password" id="signupPassword" placeholder="••••••••"></div>
+                        <button class="auth-action-trigger-btn" onclick="handleSignup()">Create Account</button>
+                        <div class="auth-switch-footer">Account hai? <span onclick="switchAuthView('login')">Sign In</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isLoggedIn = false; let currentMode = 'script'; let savedChats = []; let rawCurrentOutput = ''; let isCurrentImage = false;
+        
+        window.onload = function() {
+            if(localStorage.getItem('scribe_logged_in') === 'true') {
+                isLoggedIn = true;
+                const localData = localStorage.getItem('scribe_chats_history');
+                if(localData) savedChats = JSON.parse(localData);
+                showMainPage(); renderSidebarHistory();
+            } else { showMainPage(); }
+        };
+
+        function setGenerationMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`mode-${mode}`).classList.add('active');
+            
+            const settings = document.getElementById('settingsPanel');
+            if (settings) {
+                settings.style.display = mode === 'script' ? 'flex' : 'none';
+            }
+            
+            if (mode === 'image') {
+                document.getElementById('topicInput').placeholder = "Describe the image you want to generate...";
+            } else if (mode === 'question') {
+                document.getElementById('topicInput').placeholder = "Ask anything...";
+            } else {
+                document.getElementById('topicInput').placeholder = "Enter topic for script...";
+            }
+        }
+
+        function navigateToAuth(mode) {
+            document.getElementById('mainInterfaceBlock').style.display = 'none';
+            document.getElementById('authPageBlock').style.display = 'block';
+            document.getElementById('navAuthButtons').style.display = 'none';
+            document.getElementById('navLogoutButton').style.display = 'none';
+            document.getElementById('chatSidebar').style.display = 'none';
+            switchAuthView(mode);
+        }
+
+        function switchAuthView(mode) {
+            document.getElementById('loginFormContainer').style.display = mode === 'login' ? 'block' : 'none';
+            document.getElementById('signupFormContainer').style.display = mode === 'signup' ? 'block' : 'none';
+        }
+
+        function showMainPage() {
+            document.getElementById('mainInterfaceBlock').style.display = 'flex';
+            document.getElementById('authPageBlock').style.display = 'none';
+            if (isLoggedIn) {
+                document.getElementById('navAuthButtons').style.display = 'none';
+                document.getElementById('navLogoutButton').style.display = 'block';
+                document.getElementById('chatSidebar').style.display = 'flex';
+            } else {
+                document.getElementById('navAuthButtons').style.display = 'flex';
+                document.getElementById('navLogoutButton').style.display = 'none';
+                document.getElementById('chatSidebar').style.display = 'none';
+            }
+        }
+
+        function handleLogout() { isLoggedIn = false; localStorage.removeItem('scribe_logged_in'); showMainPage(); }
+        
+        async function handleSignup() {
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const res = await fetch('/api/signup', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password }) });
+            const data = await res.json();
+            if(data.success) { alert("Account created!"); switchAuthView('login'); } else { alert(data.error); }
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const res = await fetch('/api/signin', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password }) });
+            const data = await res.json();
+            if(data.success) { isLoggedIn = true; localStorage.setItem('scribe_logged_in', 'true'); showMainPage(); renderSidebarHistory(); } else { alert(data.error); }
+        }
+
+        async function handleGeneration() {
+            const val = document.getElementById('topicInput').value.trim();
+            if(!val) return;
+            document.getElementById('generateBtn').disabled = true;
+            const loader = document.getElementById('loadingText');
+            loader.style.display = 'block';
+            loader.innerText = currentMode === 'image' ? 'Generating Image...' : 'Creating...';
+            
+            try {
+                if(currentMode === 'script') {
+                    const size = document.getElementById('settingSize').value;
+                    const tone = document.getElementById('settingTone').value;
+                    const res = await fetch('/generate-script', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ topic: val, size, tone }) });
+                    const data = await res.json();
+                    if(data.success) { renderOutput('Generated Script', data.script, val, false); }
+                    else { alert("Script creation failed!"); }
+                    document.getElementById('generateBtn').disabled = false;
+                    loader.style.display = 'none';
+                } else if(currentMode === 'question') {
+                    const res = await fetch('/ask-question', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ question: val }) });
+                    const data = await res.json();
+                    if(data.success) { renderOutput('AI Answer', data.answer, val, false); }
+                    else { alert("Chat failed!"); }
+                    document.getElementById('generateBtn').disabled = false;
+                    loader.style.display = 'none';
+                } else if(currentMode === 'image') {
+                    const cleanPrompt = encodeURIComponent(val);
+                    const randomSeed = Math.floor(Math.random() * 100000);
+                    const turboImageUrl = `https://image.pollinations.ai/p/${cleanPrompt}?width=1024&height=1024&model=turbo&seed=${randomSeed}`;
+                    
+                    const imgCheck = new Image();
+                    imgCheck.src = turboImageUrl;
+                    imgCheck.onload = function() {
+                        renderOutput('AI Generated Image', turboImageUrl, val, true);
+                        document.getElementById('generateBtn').disabled = false;
+                        loader.style.display = 'none';
+                    };
+                    imgCheck.onerror = function() {
+                        alert("Image fetch failed!");
+                        document.getElementById('generateBtn').disabled = false;
+                        loader.style.display = 'none';
+                    };
+                }
+            } catch(e) { 
+                alert("Generation failed!"); 
+                document.getElementById('generateBtn').disabled = false;
+                loader.style.display = 'none';
+            }
+        }
+
+        function renderOutput(title, textOrUrl, prompt, isImage) {
+            document.getElementById('welcomeSection').style.display = 'none';
+            document.getElementById('resultHeaderType').innerText = title;
+            
+            const outputDiv = document.getElementById('scriptOutput');
+            isCurrentImage = isImage;
+            rawCurrentOutput = textOrUrl;
+            
+            if(isImage) {
+                outputDiv.innerHTML = `<img src="${textOrUrl}" alt="${prompt}" class="generated-image-element">`;
+                document.getElementById('copyActionBtn').innerText = 'Copy Image Link';
+            } else {
+                outputDiv.innerText = textOrUrl;
+                document.getElementById('copyActionBtn').innerText = 'Copy';
+            }
+            
+            document.getElementById('resultContainer').style.display = 'block';
+            document.getElementById('mainInterfaceBlock').style.display = 'flex'; 
+            document.getElementById('topicInput').value = '';
+            
+            const exists = savedChats.some(chat => chat.text === textOrUrl && chat.prompt === prompt);
+            if(isLoggedIn && !exists) {
+                savedChats.unshift({ id: Date.now(), prompt, title, text: textOrUrl, isImage });
+                localStorage.setItem('scribe_chats_history', JSON.stringify(savedChats));
+                renderSidebarHistory();
+            }
+        }
+
+        function renderSidebarHistory() {
+            const list = document.getElementById('historyList'); list.innerHTML = '';
+            savedChats.forEach(chat => {
+                const li = document.createElement('li'); li.className = 'history-item'; li.innerText = chat.prompt;
+                li.onclick = () => {
+                    renderOutput(chat.title, chat.text, chat.prompt, chat.isImage || false);
+                };
+                list.appendChild(li);
+            });
+        }
+
+        function startNewChat() { 
+            document.getElementById('welcomeSection').style.display = 'block'; 
+            document.getElementById('resultContainer').style.display = 'none'; 
+            document.getElementById('mainInterfaceBlock').style.display = 'flex';
+            document.getElementById('topicInput').value = '';
+            rawCurrentOutput = ''; 
+            isCurrentImage = false; 
+        }
+        
+        function copyToClipboard() { navigator.clipboard.writeText(rawCurrentOutput); alert(isCurrentImage ? "Image URL copied!" : "Text copied!"); }
+        
+        function downloadOutput() { 
+            if(isCurrentImage) {
+                window.open(rawCurrentOutput, '_blank');
+            } else {
+                const blob = new Blob([rawCurrentOutput], { type: 'text/plain' }); 
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); 
+                a.download = 'output.txt'; a.click(); 
+            }
+        }
+    </script>
+</body>
+</html>
