@@ -1,19 +1,11 @@
 import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import Groq from 'groq-sdk';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = express();
 app.use(express.json());
-
-// Static handling via public sub-routing
-app.use(express.static(path.join(__dirname, 'public')));
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -65,14 +57,9 @@ app.post('/api/ask-question', async (req, res) => {
 app.post('/api/signup', (req, res) => res.json({ success: true }));
 app.post('/api/signin', (req, res) => res.json({ success: true }));
 
-// Default API health-check to debug server issues easily
+// Health Check
 app.get('/api/health', (req, res) => {
     return res.json({ status: "alive", message: "Backend structure is fully working on Vercel!" });
 });
 
 export default app;
-
-if (process.env.NODE_ENV !== 'production') {
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => console.log(`Local server: http://localhost:${PORT}`));
-}
