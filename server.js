@@ -19,7 +19,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Groq client initialization
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// 1. ENDPOINT: Video Script Generator (Route updated with /api)
+// 1. ENDPOINT: Video Script Generator
 app.post('/api/generate-script', async (req, res) => {
     const { topic, size, tone } = req.body;
     
@@ -39,14 +39,16 @@ app.post('/api/generate-script', async (req, res) => {
             model: 'llama-3.3-70b-versatile',
         });
 
-        res.json({ success: true, script: chatCompletion.choices[0]?.message?.content || '' });
+        // FIX: Added [0] index to choices array
+        const resultText = chatCompletion.choices[0]?.message?.content || '';
+        res.json({ success: true, script: resultText });
     } catch (error) {
         console.error('Groq Script Error:', error);
         res.status(500).json({ success: false, error: 'Failed to generate script via Groq.' });
     }
 });
 
-// 2. ENDPOINT: Direct AI Chat / Ask Question (Route updated with /api)
+// 2. ENDPOINT: Direct AI Chat / Ask Question
 app.post('/api/ask-question', async (req, res) => {
     const { question } = req.body;
 
@@ -60,7 +62,9 @@ app.post('/api/ask-question', async (req, res) => {
             model: 'llama-3.3-70b-versatile',
         });
 
-        res.json({ success: true, answer: chatCompletion.choices[0]?.message?.content || '' });
+        // FIX: Added [0] index to choices array
+        const resultText = chatCompletion.choices[0]?.message?.content || '';
+        res.json({ success: true, answer: resultText });
     } catch (error) {
         console.error('Groq Chat Error:', error);
         res.status(500).json({ success: false, error: 'Failed to fetch response from Groq.' });
