@@ -8,12 +8,24 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
+      "src": "/api/ask-question",
+      "dest": "server.js"
+    },
+    {
+      "src": "/api/generate-script",
+      "dest": "server.js"
+    },
+    {
+      "src": "/api/signup",
+      "dest": "server.js"
+    },
+    {
+      "src": "/api/signin",
       "dest": "server.js"
     },
     {
       "src": "/(.*)",
-      "dest": "/public/$1"
+      "dest": "public/$1"
     }
   ]
 }
