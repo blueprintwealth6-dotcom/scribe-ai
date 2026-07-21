@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import Groq from 'groq-sdk'; // Groq SDK use kar rahe hain ab
+import Groq from 'groq-sdk';
 
 // .env file config
 dotenv.config();
@@ -12,14 +12,15 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static('public'));
 
-// Groq client initialization (Reads GROQ_API_KEY from .env)
+// Static files serverless ke liye serve karein
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Groq client initialization
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// 1. ENDPOINT: Video Script Generator
-app.post('/generate-script', async (req, res) => {
+// 1. ENDPOINT: Video Script Generator (Route updated with /api)
+app.post('/api/generate-script', async (req, res) => {
     const { topic, size, tone } = req.body;
     
     if (!topic) {
@@ -35,7 +36,7 @@ app.post('/generate-script', async (req, res) => {
 
         const chatCompletion = await groq.chat.completions.create({
             messages: [{ role: 'user', content: prompt }],
-            model: 'llama-3.3-70b-versatile', // Groq ka super-fast premium model
+            model: 'llama-3.3-70b-versatile',
         });
 
         res.json({ success: true, script: chatCompletion.choices[0]?.message?.content || '' });
@@ -45,8 +46,8 @@ app.post('/generate-script', async (req, res) => {
     }
 });
 
-// 2. ENDPOINT: Direct AI Chat / Ask Question
-app.post('/ask-question', async (req, res) => {
+// 2. ENDPOINT: Direct AI Chat / Ask Question (Route updated with /api)
+app.post('/api/ask-question', async (req, res) => {
     const { question } = req.body;
 
     if (!question) {
@@ -75,14 +76,18 @@ app.post('/api/signin', (req, res) => {
     res.json({ success: true });
 });
 
-// Fallback to index.html
+// Fallback to index.html for Frontend Router
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Start Server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running perfectly on http://localhost:${PORT}`);
-});
+// Vercel Serverless environment ke liye export app zaroori hai
+export default app;
 
+// Local terminal par run karne ke liye standard conditional check
+if (process.env.NODE_ENV !== 'production') {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+        console.log(`Server is running perfectly on http://localhost:${PORT}`);
+    });
+}
