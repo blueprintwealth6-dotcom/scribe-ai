@@ -183,191 +183,185 @@
         </div>
     </div>
 
-    <script>
-        let isLoggedIn = false; let currentMode = 'script'; let savedChats = []; let rawCurrentOutput = ''; let isCurrentImage = false;
-        
-        window.onload = function() {
-            if(localStorage.getItem('scribe_logged_in') === 'true') {
-                isLoggedIn = true;
-                const localData = localStorage.getItem('scribe_chats_history');
-                if(localData) savedChats = JSON.parse(localData);
-                showMainPage(); renderSidebarHistory();
-            } else { showMainPage(); }
-        };
+        <script>
+        // Global App States
+        let currentMode = 'ask'; // Default active panel
+        let userIsSignedIn = false;
 
-        function setGenerationMode(mode) {
+        // Mode Switching Event Listeners
+        function setMode(mode) {
             currentMode = mode;
             document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`mode-${mode}`).classList.add('active');
             
-            const settings = document.getElementById('settingsPanel');
-            if (settings) {
-                settings.style.display = mode === 'script' ? 'flex' : 'none';
-            }
-            
-            if (mode === 'image') {
-                document.getElementById('topicInput').placeholder = "Describe the image you want to generate...";
-            } else if (mode === 'question') {
-                document.getElementById('topicInput').placeholder = "Ask anything...";
-            } else {
-                document.getElementById('topicInput').placeholder = "Enter topic for script...";
-            }
-        }
+            const advancedOptions = document.getElementById('advancedOptions');
+            const topicInput = document.getElementById('topicInput');
 
-        function navigateToAuth(mode) {
-            document.getElementById('mainInterfaceBlock').style.display = 'none';
-            document.getElementById('authPageBlock').style.display = 'block';
-            document.getElementById('navAuthButtons').style.display = 'none';
-            document.getElementById('navLogoutButton').style.display = 'none';
-            document.getElementById('chatSidebar').style.display = 'none';
-            switchAuthView(mode);
-        }
-
-        function switchAuthView(mode) {
-            document.getElementById('loginFormContainer').style.display = mode === 'login' ? 'block' : 'none';
-            document.getElementById('signupFormContainer').style.display = mode === 'signup' ? 'block' : 'none';
-        }
-
-        function showMainPage() {
-            document.getElementById('mainInterfaceBlock').style.display = 'flex';
-            document.getElementById('authPageBlock').style.display = 'none';
-            if (isLoggedIn) {
-                document.getElementById('navAuthButtons').style.display = 'none';
-                document.getElementById('navLogoutButton').style.display = 'block';
-                document.getElementById('chatSidebar').style.display = 'flex';
-            } else {
-                document.getElementById('navAuthButtons').style.display = 'flex';
-                document.getElementById('navLogoutButton').style.display = 'none';
-                document.getElementById('chatSidebar').style.display = 'none';
+            if (mode === 'script') {
+                document.getElementById('scriptModeBtn').classList.add('active');
+                advancedOptions.style.display = 'flex';
+                topicInput.placeholder = "Enter video topic or description...";
+            } else if (mode === 'ask') {
+                document.getElementById('askModeBtn').classList.add('active');
+                advancedOptions.style.display = 'none';
+                topicInput.placeholder = "Ask anything...";
+            } else if (mode === 'image') {
+                document.getElementById('imageModeBtn').classList.add('active');
+                advancedOptions.style.display = 'none';
+                topicInput.placeholder = "Describe the image you want to create...";
             }
         }
 
-        function handleLogout() { isLoggedIn = false; localStorage.removeItem('scribe_logged_in'); showMainPage(); }
-        
-        async function handleSignup() {
-            const email = document.getElementById('signupEmail').value;
-            const password = document.getElementById('signupPassword').value;
-            const res = await fetch('/api/signup', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password }) });
-            const data = await res.json();
-            if(data.success) { alert("Account created!"); switchAuthView('login'); } else { alert(data.error); }
-        }
-
-        async function handleLogin() {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            const res = await fetch('/api/signin', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password }) });
-            const data = await res.json();
-            if(data.success) { isLoggedIn = true; localStorage.setItem('scribe_logged_in', 'true'); showMainPage(); renderSidebarHistory(); } else { alert(data.error); }
-        }
-
+        // Main Core API trigger function
         async function handleGeneration() {
-            const val = document.getElementById('topicInput').value.trim();
-            if(!val) return;
-            document.getElementById('generateBtn').disabled = true;
-            const loader = document.getElementById('loadingText');
-            loader.style.display = 'block';
-            loader.innerText = currentMode === 'image' ? 'Generating Image...' : 'Creating...';
+            const inputField = document.getElementById('topicInput');
+            const promptText = inputField.value.trim();
+            const generateBtn = document.getElementById('generateBtn');
+
+            if (!promptText) return;
+
+            // UI updates for loading state
+            generateBtn.disabled = true;
+            generateBtn.innerText = "...";
             
+            // Clean previous display outputs
+            document.getElementById('outputArea').style.display = 'none';
+            document.getElementById('welcomeDisplay').style.display = 'none';
+
             try {
-                if(currentMode === 'script') {
-                    const size = document.getElementById('settingSize').value;
-                    const tone = document.getElementById('settingTone').value;
-                    const res = await fetch('/generate-script', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ topic: val, size, tone }) });
-                    const data = await res.json();
-                    if(data.success) { renderOutput('Generated Script', data.script, val, false); }
-                    else { alert("Script creation failed!"); }
-                    document.getElementById('generateBtn').disabled = false;
-                    loader.style.display = 'none';
-                } else if(currentMode === 'question') {
-                    const res = await fetch('/ask-question', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ question: val }) });
-                    const data = await res.json();
-                    if(data.success) { renderOutput('AI Answer', data.answer, val, false); }
-                    else { alert("Chat failed!"); }
-                    document.getElementById('generateBtn').disabled = false;
-                    loader.style.display = 'none';
-                } else if(currentMode === 'image') {
-                    const cleanPrompt = encodeURIComponent(val);
-                    const randomSeed = Math.floor(Math.random() * 100000);
-                    const turboImageUrl = `https://image.pollinations.ai/p/${cleanPrompt}?width=1024&height=1024&model=turbo&seed=${randomSeed}`;
+                if (currentMode === 'script') {
+                    const ratio = document.getElementById('aspectRatio').value;
+                    const style = document.getElementById('contentTone').value;
+
+                    // FIXED: Correct Vercel API path
+                    const response = await fetch('/api/generate-script', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ topic: promptText, size: ratio, tone: style })
+                    });
                     
-                    const imgCheck = new Image();
-                    imgCheck.src = turboImageUrl;
-                    imgCheck.onload = function() {
-                        renderOutput('AI Generated Image', turboImageUrl, val, true);
-                        document.getElementById('generateBtn').disabled = false;
-                        loader.style.display = 'none';
-                    };
-                    imgCheck.onerror = function() {
-                        alert("Image fetch failed!");
-                        document.getElementById('generateBtn').disabled = false;
-                        loader.style.display = 'none';
-                    };
+                    const data = await response.json();
+                    if (data.success) {
+                        displayOutput("Generated Script", data.script, false);
+                        addToHistory(promptText);
+                    } else {
+                        alert("Generation failed!");
+                    }
+
+                } else if (currentMode === 'ask') {
+                    // FIXED: Correct Vercel API path
+                    const response = await fetch('/api/ask-question', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ question: promptText })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        displayOutput("AI Answer", data.answer, false);
+                        addToHistory(promptText);
+                    } else {
+                        alert("Generation failed!");
+                    }
+
+                } else if (currentMode === 'image') {
+                    // Mock Image generation fallback
+                    setTimeout(() => {
+                        displayOutput("Generated Image", "https://unsplash.com", true);
+                        addToHistory(promptText);
+                    }, 2000);
                 }
-            } catch(e) { 
-                alert("Generation failed!"); 
-                document.getElementById('generateBtn').disabled = false;
-                loader.style.display = 'none';
+            } catch (err) {
+                console.error("Fetch Execution Error:", err);
+                alert("Generation failed!");
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = "&#8594;"; // Reset Arrow Icon
+                inputField.value = "";
             }
         }
 
-        function renderOutput(title, textOrUrl, prompt, isImage) {
-            document.getElementById('welcomeSection').style.display = 'none';
-            document.getElementById('resultHeaderType').innerText = title;
+        // Render UI Results Element
+        function displayOutput(titleText, contentData, isImageElement) {
+            document.getElementById('outputArea').style.display = 'block';
+            document.getElementById('resultTitle').innerText = titleText;
             
-            const outputDiv = document.getElementById('scriptOutput');
-            isCurrentImage = isImage;
-            rawCurrentOutput = textOrUrl;
-            
-            if(isImage) {
-                outputDiv.innerHTML = `<img src="${textOrUrl}" alt="${prompt}" class="generated-image-element">`;
-                document.getElementById('copyActionBtn').innerText = 'Copy Image Link';
+            const bodyNode = document.getElementById('scriptBody');
+            bodyNode.innerHTML = "";
+
+            if (isImageElement) {
+                const img = document.createElement('img');
+                img.src = contentData;
+                img.className = "generated-image-element";
+                bodyNode.appendChild(img);
             } else {
-                outputDiv.innerText = textOrUrl;
-                document.getElementById('copyActionBtn').innerText = 'Copy';
-            }
-            
-            document.getElementById('resultContainer').style.display = 'block';
-            document.getElementById('mainInterfaceBlock').style.display = 'flex'; 
-            document.getElementById('topicInput').value = '';
-            
-            const exists = savedChats.some(chat => chat.text === textOrUrl && chat.prompt === prompt);
-            if(isLoggedIn && !exists) {
-                savedChats.unshift({ id: Date.now(), prompt, title, text: textOrUrl, isImage });
-                localStorage.setItem('scribe_chats_history', JSON.stringify(savedChats));
-                renderSidebarHistory();
+                bodyNode.innerText = contentData;
             }
         }
 
-        function renderSidebarHistory() {
-            const list = document.getElementById('historyList'); list.innerHTML = '';
-            savedChats.forEach(chat => {
-                const li = document.createElement('li'); li.className = 'history-item'; li.innerText = chat.prompt;
-                li.onclick = () => {
-                    renderOutput(chat.title, chat.text, chat.prompt, chat.isImage || false);
-                };
-                list.appendChild(li);
-            });
+        // Navigation controls
+        function showMainPage() {
+            document.getElementById('mainInterfaceView').style.display = 'flex';
+            document.getElementById('authInterfaceView').style.display = 'none';
+            document.getElementById('outputArea').style.display = 'none';
+            document.getElementById('welcomeDisplay').style.display = 'block';
         }
 
-        function startNewChat() { 
-            document.getElementById('welcomeSection').style.display = 'block'; 
-            document.getElementById('resultContainer').style.display = 'none'; 
-            document.getElementById('mainInterfaceBlock').style.display = 'flex';
-            document.getElementById('topicInput').value = '';
-            rawCurrentOutput = ''; 
-            isCurrentImage = false; 
-        }
-        
-        function copyToClipboard() { navigator.clipboard.writeText(rawCurrentOutput); alert(isCurrentImage ? "Image URL copied!" : "Text copied!"); }
-        
-        function downloadOutput() { 
-            if(isCurrentImage) {
-                window.open(rawCurrentOutput, '_blank');
+        function showAuthPage(viewType) {
+            document.getElementById('mainInterfaceView').style.display = 'none';
+            document.getElementById('authInterfaceView').style.display = 'flex';
+            
+            const header = document.getElementById('authTitle');
+            const submitBtn = document.getElementById('authSubmitBtn');
+            const footerText = document.getElementById('authFooterToggle');
+
+            if (viewType === 'signin') {
+                header.innerText = "Welcome back";
+                submitBtn.innerText = "Sign In";
+                footerText.innerHTML = "Don't have an account? <span onclick=\"showAuthPage('signup')\">Sign up</span>";
             } else {
-                const blob = new Blob([rawCurrentOutput], { type: 'text/plain' }); 
-                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); 
-                a.download = 'output.txt'; a.click(); 
+                header.innerText = "Create your account";
+                submitBtn.innerText = "Sign Up";
+                footerText.innerHTML = "Already have an account? <span onclick=\"showAuthPage('signin')\">Sign in</span>";
             }
+        }
+
+        async function handleAuthSubmission() {
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+            const btnText = document.getElementById('authSubmitBtn').innerText;
+            
+            const endpoint = btnText === 'Sign In' ? '/api/signin' : '/api/signup';
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    userIsSignedIn = true;
+                    document.getElementById('chatSidebar').style.display = 'flex';
+                    document.getElementById('authSectionLinks').style.display = 'none';
+                    showMainPage();
+                }
+            } catch (err) {
+                console.error("Auth Fail:", err);
+            }
+        }
+
+        function startNewChat() {
+            document.getElementById('outputArea').style.display = 'none';
+            document.getElementById('welcomeDisplay').style.display = 'block';
+        }
+
+        function addToHistory(text) {
+            const list = document.getElementById('historyList');
+            const li = document.createElement('li');
+            li.className = "history-item";
+            li.innerText = text;
+            list.prepend(li);
         }
     </script>
 </body>
