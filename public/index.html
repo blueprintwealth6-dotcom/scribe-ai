@@ -3,365 +3,219 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ScribeAI</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700&family=Space+Grotesk:wght=500;700&display=swap" rel="stylesheet">
-    <style>
-        /* Global CSS RESET */
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body, html { width: 100%; height: 100%; background-color: #111; color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; overflow: hidden; }
-        .master-layout-container { display: flex; width: 100vw; height: 100vh; }
-        
-        /* SIDEBAR SECTION */
-        .sidebar-wrapper { width: 280px; min-width: 280px; background-color: #171717; display: flex; flex-direction: column; padding: 24px 16px; border-right: 1px solid #262626; height: 100%; }
-        .new-chat-btn { 
-            width: 100%; 
-            background: linear-gradient(135deg, #ff4500 0%, #ff6a00 100%); 
-            color: white; border: none; padding: 14px; border-radius: 10px; 
-            font-size: 15px; font-weight: 700; cursor: pointer; 
-            box-shadow: 0 4px 15px rgba(255, 69, 0, 0.2); transition: all 0.3s ease; 
-            font-family: 'Space Grotesk', sans-serif; text-align: center;
-        }
-        .new-chat-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255, 69, 0, 0.35); }
-        .sidebar-history { margin-top: 30px; flex-grow: 1; overflow-y: auto; }
-        .history-label { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 16px; }
-        .history-list { list-style: none; }
-        .history-item { padding: 12px; border-radius: 8px; cursor: pointer; color: #aaa; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 6px; transition: 0.2s; }
-        .history-item:hover { background-color: #222; color: #fff; }
-        
-        /* MAIN INTERFACE */
-        .app-main-layout { flex-grow: 1; display: flex; flex-direction: column; background-color: #111; height: 100%; width: 100%; overflow: hidden; }
-        .navbar { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; border-bottom: 1px solid #262626; background-color: #111; width: 100%; }
-        .logo-container { display: flex; align-items: center; height: 45px; }
-        .scribe-svg-logo { height: 100%; width: auto; display: block; }
-        
-        .auth-buttons { display: flex; gap: 16px; align-items: center; }
-        .btn-link { background: none; border: none; color: #aaa; cursor: pointer; font-size: 15px; font-weight: 600; transition: 0.2s; text-decoration: none; }
-        .btn-link:hover { color: #fff; }
-        .btn-primary-sm { background-color: #ff4500; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-        .btn-primary-sm:hover { background-color: #e03e00; }
-        
-        /* CENTER DISPLAYS */
-        .page-block { flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; height: calc(100% - 73px); width: 100%; }
-        .main-content { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px; overflow-y: auto; width: 100%; }
-        .welcome-section { text-align: center; width: 100%; }
-        .welcome-section h1 { font-size: 38px; font-weight: 700; color: #fff; font-family: 'Space Grotesk', sans-serif; }
-        
-        /* INPUT AREA */
-        .input-container-wrap { padding: 24px 40px; display: flex; justify-content: center; background-color: #111; width: 100%; }
-        .input-box-card { width: 100%; max-width: 760px; background: #171717; border: 1px solid #262626; border-radius: 16px; padding: 20px; }
-        .generation-modes-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .generation-modes { display: flex; gap: 8px; }
-        .mode-btn { background: transparent; color: #888; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 600; transition: 0.2s; }
-        .mode-btn.active { background: #262626; color: #fff; }
-        .advanced-settings { display: flex; gap: 8px; }
-        .settings-dropdown { background: #222; color: #fff; border: 1px solid #333; padding: 8px 12px; border-radius: 8px; font-size: 13px; outline: none; }
-        .input-field-container { display: flex; align-items: center; gap: 14px; width: 100%; }
-        #topicInput { flex-grow: 1; background: transparent; border: none; color: #fff; resize: none; outline: none; font-size: 16px; font-family: inherit; line-height: 1.5; min-height: 24px; }
-        #generateBtn { background: #fff; color: #000; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
-        
-        /* OUTPUT AREA */
-        .result-area { width: 100%; max-width: 760px; background: #171717; padding: 28px; border-radius: 16px; border: 1px solid #262626; margin-bottom: 20px; }
-        .result-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #262626; padding-bottom: 12px; }
-        .result-header { font-weight: 700; color: #ff4500; font-size: 18px; font-family: 'Space Grotesk', sans-serif; }
-        .script-body { white-space: pre-wrap; color: #e5e5e5; line-height: 1.7; font-size: 15px; max-height: 400px; overflow-y: auto; }
-        .generated-image-element { width: 100%; max-height: 420px; border-radius: 12px; object-fit: contain; margin-top: 10px; border: 1px solid #333; display: block; background-color: #0b0b0b; }
-
-        /* AUTH CARD PANEL */
-        .auth-view-wrapper { display: flex; justify-content: center; align-items: center; width: 100%; height: calc(100vh - 80px); padding: 20px; }
-        .auth-card-panel { width: 100%; max-width: 490px; background: #171717; padding: 45px; border-radius: 20px; border: 1px solid #262626; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-        .auth-card-panel h2 { font-size: 34px; font-weight: 700; margin-bottom: 8px; font-family: 'Space Grotesk', sans-serif; }
-        .auth-subtitle { color: #666; font-size: 14px; margin-bottom: 30px; }
-        .form-group-field { margin-bottom: 22px; }
-        .form-group-field label { display: block; font-size: 12px; font-weight: 600; color: #888; margin-bottom: 8px; text-transform: uppercase; }
-        .form-group-field input { width: 100%; padding: 15px; background: #222; border: 1px solid #333; border-radius: 10px; color: white; font-size: 15px; outline: none; }
-        .form-group-field input:focus { border-color: #ff4500; }
-        .auth-action-trigger-btn { width: 100%; padding: 15px; background: #ff4500; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; }
-        .auth-switch-footer { margin-top: 24px; text-align: center; color: #666; font-size: 14px; }
-        .auth-switch-footer span { color: #ff4500; cursor: pointer; font-weight: 600; }
-    </style>
+    <title>ScribeAI - Advanced Content Platform</title>
+    <!-- CSS File Link ki gayi hai -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://googleapis.com" rel="stylesheet">
 </head>
 <body>
     <div class="master-layout-container">
         
-        <!-- SIDEBAR -->
-        <aside id="chatSidebar" class="sidebar-wrapper" style="display: none;">
-            <div class="sidebar-header"><button class="new-chat-btn" onclick="startNewChat()">+ New Chat</button></div>
-            <div class="sidebar-history"><div class="history-label">Recent History</div><ul class="history-list" id="historyList"></ul></div>
+        <!-- SIDEBAR CONTAINER -->
+        <aside id="chatSidebar" class="sidebar-wrapper">
+            <div class="sidebar-header">
+                <button class="new-chat-btn" onclick="startNewChat()">+ New Generation</button>
+            </div>
+            <div class="sidebar-history">
+                <div class="history-meta-row">
+                    <div class="history-label">Activity Log</div>
+                    <button class="clear-history-action" onclick="clearHistory()">Clear All</button>
+                </div>
+                <ul class="history-list-box" id="historyList"></ul>
+            </div>
         </aside>
 
-        <!-- MAIN APP FRAME -->
+        <!-- MAIN PRODUCTION CANVAS -->
         <div class="app-main-layout">
             <header class="navbar">
                 <div class="logo-container" onclick="showMainPage()" style="cursor: pointer;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 100" class="scribe-svg-logo">
-                        <defs>
-                            <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#ff4500" /><stop offset="100%" stop-color="#ff7a00" />
-                            </linearGradient>
-                        </defs>
-                        <g transform="translate(10, 15)">
-                            <path d="M25 5 L55 5 L40 35 L10 35 Z" fill="url(#logoGrad)" />
-                            <path d="M40 35 L55 5 L55 65 L40 35 Z" fill="#fff" opacity="0.15" />
-                            <path d="M40 35 L70 35 L55 65 L25 65 Z" fill="url(#logoGrad)" />
-                            <circle cx="55" cy="20" r="4.5" fill="#fff" />
-                        </g>
-                        <text x="105" y="62" font-family="'Space Grotesk', sans-serif" font-size="42" font-weight="700" fill="#fff">Scribe</text>
-                        <text x="238" y="62" font-family="'Space Grotesk', sans-serif" font-size="42" font-weight="700" fill="url(#logoGrad)">AI</text>
-                    </svg>
+                    <div class="scribe-text-logo">Scribe AI</div>
                 </div>
-                <div class="auth-buttons" id="navAuthButtons">
-                    <button class="btn-link" onclick="navigateToAuth('login')">Sign In</button>
-                    <button class="btn-primary-sm" onclick="navigateToAuth('signup')">Sign Up</button>
-                </div>
-                <div class="auth-buttons" id="navLogoutButton" style="display: none;">
-                    <button class="btn-link" onclick="handleLogout()">Log Out</button>
+                <div class="nav-utility-controls">
+                    <button class="theme-toggle-trigger" onclick="toggleTheme()" title="Toggle View Theme">🌓</button>
+                    <button class="btn-link">Sign In</button>
+                    <button class="btn-primary-sm">Sign Up</button>
                 </div>
             </header>
 
-            <div id="mainInterfaceBlock" class="page-block">
-                <main class="main-content">
-                    <div class="welcome-section" id="welcomeSection"><h1>How can I help you create today?</h1></div>
-                    
-                    <!-- DISPLAY INTERFACE FOR SCRIPT/IMAGE -->
-                    <div class="result-area" id="resultContainer" style="display: none;">
+            <!-- CORE PRESENTATION CONTROLLER -->
+            <div class="page-block">
+                <div class="main-content">
+                    <div class="welcome-section" id="welcomeSection">
+                        <h1>How can I help you create today?</h1>
+                        <p>Generate highly comprehensive video scripts or talk directly with our advanced AI orchestrator system.</p>
+                    </div>
+
+                    <!-- AI CONTAINER FEEDBACK OUTPUT -->
+                    <div class="result-area" id="resultArea">
                         <div class="result-header-row">
-                            <div class="result-header" id="resultHeaderType">Output</div>
-                            <div>
-                                <button class="btn-link" id="copyActionBtn" onclick="copyToClipboard()">Copy</button>
-                                <button class="btn-link" onclick="downloadOutput()">Download</button>
+                            <div class="result-header" id="resultHeader">AI Generated Output</div>
+                            <div class="output-actions-group">
+                                <button class="action-tool-btn" onclick="copyToClipboard()">📋 Copy</button>
+                                <button class="action-tool-btn" onclick="downloadOutputText()">💾 Download</button>
                             </div>
                         </div>
-                        <div class="script-body" id="scriptOutput"></div>
+                        <div class="script-body" id="scriptBody"></div>
                     </div>
-                </main>
-                
-                <footer class="input-container-wrap">
+                </div>
+
+                <!-- DESK CONSOLE ENGINE CONTROL -->
+                <div class="input-container-wrap">
                     <div class="input-box-card">
                         <div class="generation-modes-row">
                             <div class="generation-modes">
-                                <button class="mode-btn active" id="mode-script" onclick="setGenerationMode('script')">Script</button>
-                                <button class="mode-btn" id="mode-question" onclick="setGenerationMode('question')">Ask AI</button>
-                                <button class="mode-btn" id="mode-image" onclick="setGenerationMode('image')">Create Image</button>
+                                <button class="mode-btn active" id="modeScript" onclick="setMode('script')">Script Engine</button>
+                                <button class="mode-btn" id="modeAsk" onclick="setMode('ask')">Direct AI Chat</button>
                             </div>
-                            <div class="advanced-settings" id="settingsPanel">
-                                <select id="settingSize" class="settings-dropdown"><option value="16:9">Standard (16:9)</option><option value="9:16">Short/Reel (9:16)</option></select>
-                                <select id="settingTone" class="settings-dropdown"><option value="Professional">Professional</option><option value="Dynamic">Dynamic</option></select>
+                            <div class="advanced-settings" id="advancedSettingsPanel">
+                                <select class="settings-dropdown" id="aspectRatioSelect">
+                                    <option value="16:9">16:9 Cinema</option>
+                                    <option value="9:16">9:16 Shorts/Reels</option>
+                                    <option value="1:1">1:1 Square Feed</option>
+                                </select>
+                                <select class="settings-dropdown" id="toneSelect">
+                                    <option value="Professional">Professional</option>
+                                    <option value="Casual">Casual Narration</option>
+                                    <option value="Dramatic">Dramatic Story</option>
+                                    <option value="Humorous">Humorous Script</option>
+                                </select>
                             </div>
                         </div>
                         <div class="input-field-container">
-                            <textarea id="topicInput" rows="1" placeholder="Enter topic for script..."></textarea>
-                            <div style="display: flex; align-items: center;">
-                                <div id="loadingText" style="display: none; color: #888; font-size: 13px; margin-right: 10px;">Creating...</div>
-                                <button id="generateBtn" onclick="handleGeneration()">➔</button>
-                            </div>
+                            <input type="text" id="topicInput" placeholder="Enter script topic...">
+                            <button id="generateBtn" onclick="handleGeneration()">➔</button>
                         </div>
                     </div>
-                </footer>
-            </div>
-
-            <!-- AUTH VIEWS -->
-            <div id="authPageBlock" style="display: none; flex-grow: 1;">
-                <div class="auth-view-wrapper">
-                    <div id="loginFormContainer" class="auth-card-panel">
-                        <h2>Welcome back</h2><div class="auth-subtitle">Sign in to your account</div>
-                        <div class="form-group-field"><label>Email Address</label><input type="email" id="loginEmail" placeholder="name@domain.com"></div>
-                        <div class="form-group-field"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••"></div>
-                        <button class="auth-action-trigger-btn" onclick="handleLogin()">Sign In</button>
-                        <div class="auth-switch-footer">Naya account? <span onclick="switchAuthView('signup')">Sign Up free</span></div>
-                    </div>
-                    <div id="signupFormContainer" class="auth-card-panel" style="display: none;">
-                        <h2>Create account</h2><div class="auth-subtitle">Start generating scripts seamlessly</div>
-                        <div class="form-group-field"><label>Email Address</label><input type="email" id="signupEmail" placeholder="name@domain.com"></div>
-                        <div class="form-group-field"><label>Password</label><input type="password" id="signupPassword" placeholder="••••••••"></div>
-                        <button class="auth-action-trigger-btn" onclick="handleSignup()">Create Account</button>
-                        <div class="auth-switch-footer">Account hai? <span onclick="switchAuthView('login')">Sign In</span></div>
-                    </div>
                 </div>
+
             </div>
         </div>
     </div>
+    <!-- PIPELINE SCRIPT LOGIC CORE -->
+    <script>
+        // ⚠️ ZAROORI: Apne live Vercel backend ka sahi URL yahan quote ke andar paste karein
+        const BACKEND_BASE_URL = 'https://vercel.app'; 
 
-        <script>
-        // Global App States
-        let currentMode = 'ask'; // Default active panel
-        let userIsSignedIn = false;
+        let currentMode = 'script';
 
-        // Mode Switching Event Listeners
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const targetTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', targetTheme);
+        }
+
         function setMode(mode) {
             currentMode = mode;
-            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('modeScript').classList.toggle('active', mode === 'script');
+            document.getElementById('modeAsk').classList.toggle('active', mode === 'ask');
             
-            const advancedOptions = document.getElementById('advancedOptions');
-            const topicInput = document.getElementById('topicInput');
-
-            if (mode === 'script') {
-                document.getElementById('scriptModeBtn').classList.add('active');
-                advancedOptions.style.display = 'flex';
-                topicInput.placeholder = "Enter video topic or description...";
-            } else if (mode === 'ask') {
-                document.getElementById('askModeBtn').classList.add('active');
-                advancedOptions.style.display = 'none';
-                topicInput.placeholder = "Ask anything...";
-            } else if (mode === 'image') {
-                document.getElementById('imageModeBtn').classList.add('active');
-                advancedOptions.style.display = 'none';
-                topicInput.placeholder = "Describe the image you want to create...";
-            }
+            document.getElementById('advancedSettingsPanel').style.display = mode === 'script' ? 'flex' : 'none';
+            document.getElementById('topicInput').placeholder = mode === 'script' ? 'Enter script topic...' : 'Ask anything...';
         }
 
-        // Main Core API trigger function
         async function handleGeneration() {
-            const inputField = document.getElementById('topicInput');
-            const promptText = inputField.value.trim();
-            const generateBtn = document.getElementById('generateBtn');
+            const inputVal = document.getElementById('topicInput').value.trim();
+            if (!inputVal) return alert('Please enter some text first!');
 
-            if (!promptText) return;
+            const btn = document.getElementById('generateBtn');
+            const resultArea = document.getElementById('resultArea');
+            const welcomeSection = document.getElementById('welcomeSection');
+            const scriptBody = document.getElementById('scriptBody');
+            const resultHeader = document.getElementById('resultHeader');
 
-            // UI updates for loading state
-            generateBtn.disabled = true;
-            generateBtn.innerText = "...";
-            
-            // Clean previous display outputs
-            document.getElementById('outputArea').style.display = 'none';
-            document.getElementById('welcomeDisplay').style.display = 'none';
+            btn.disabled = true;
+            btn.innerText = '...';
 
             try {
+                let response;
                 if (currentMode === 'script') {
-                    const ratio = document.getElementById('aspectRatio').value;
-                    const style = document.getElementById('contentTone').value;
+                    const size = document.getElementById('aspectRatioSelect').value;
+                    const tone = document.getElementById('toneSelect').value;
 
-                    // FIXED: Correct Vercel API path
-                    const response = await fetch('/api/generate-script', {
+                    response = await fetch(`${BACKEND_BASE_URL}/api/generate-script`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ topic: promptText, size: ratio, tone: style })
+                        body: JSON.stringify({ topic: inputVal, size, tone })
                     });
                     
                     const data = await response.json();
-                    if (data.success) {
-                        displayOutput("Generated Script", data.script, false);
-                        addToHistory(promptText);
+                    if(data.success) {
+                        welcomeSection.style.display = 'none';
+                        resultArea.style.display = 'block';
+                        resultHeader.innerText = '🎬 Generated Video Script';
+                        scriptBody.innerText = data.script;
+                        saveToHistory(`Script: ${inputVal}`);
                     } else {
-                        alert("Generation failed!");
+                        alert('Generation failed: ' + (data.error || 'Unknown Error'));
                     }
 
-                } else if (currentMode === 'ask') {
-                    // FIXED: Correct Vercel API path
-                    const response = await fetch('/api/ask-question', {
+                } else {
+                    response = await fetch(`${BACKEND_BASE_URL}/api/ask-question`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ question: promptText })
+                        body: JSON.stringify({ question: inputVal })
                     });
-                    
-                    const data = await response.json();
-                    if (data.success) {
-                        displayOutput("AI Answer", data.answer, false);
-                        addToHistory(promptText);
-                    } else {
-                        alert("Generation failed!");
-                    }
 
-                } else if (currentMode === 'image') {
-                    // Mock Image generation fallback
-                    setTimeout(() => {
-                        displayOutput("Generated Image", "https://unsplash.com", true);
-                        addToHistory(promptText);
-                    }, 2000);
+                    const data = await response.json();
+                    if(data.success) {
+                        welcomeSection.style.display = 'none';
+                        resultArea.style.display = 'block';
+                        resultHeader.innerText = '🤖 AI Response';
+                        scriptBody.innerText = data.answer;
+                        saveToHistory(`Ask: ${inputVal}`);
+                    } else {
+                        alert('Query failed: ' + (data.error || 'Unknown Error'));
+                    }
                 }
-            } catch (err) {
-                console.error("Fetch Execution Error:", err);
-                alert("Generation failed!");
+            } catch (error) {
+                console.error('Fetch System Error:', error);
+                alert('Could not connect to backend server. Ensure CORS and Backend URL are correct.');
             } finally {
-                generateBtn.disabled = false;
-                generateBtn.innerHTML = "&#8594;"; // Reset Arrow Icon
-                inputField.value = "";
+                btn.disabled = false;
+                btn.innerText = '➔';
             }
         }
 
-        // Render UI Results Element
-        function displayOutput(titleText, contentData, isImageElement) {
-            document.getElementById('outputArea').style.display = 'block';
-            document.getElementById('resultTitle').innerText = titleText;
-            
-            const bodyNode = document.getElementById('scriptBody');
-            bodyNode.innerHTML = "";
-
-            if (isImageElement) {
-                const img = document.createElement('img');
-                img.src = contentData;
-                img.className = "generated-image-element";
-                bodyNode.appendChild(img);
-            } else {
-                bodyNode.innerText = contentData;
-            }
+        function saveToHistory(text) {
+            const list = document.getElementById('historyList');
+            const li = document.createElement('li');
+            li.className = 'history-item';
+            li.innerText = text;
+            list.prepend(li);
         }
 
-        // Navigation controls
-        function showMainPage() {
-            document.getElementById('mainInterfaceView').style.display = 'flex';
-            document.getElementById('authInterfaceView').style.display = 'none';
-            document.getElementById('outputArea').style.display = 'none';
-            document.getElementById('welcomeDisplay').style.display = 'block';
+        function clearHistory() {
+            document.getElementById('historyList').innerHTML = '';
         }
 
-        function showAuthPage(viewType) {
-            document.getElementById('mainInterfaceView').style.display = 'none';
-            document.getElementById('authInterfaceView').style.display = 'flex';
-            
-            const header = document.getElementById('authTitle');
-            const submitBtn = document.getElementById('authSubmitBtn');
-            const footerText = document.getElementById('authFooterToggle');
-
-            if (viewType === 'signin') {
-                header.innerText = "Welcome back";
-                submitBtn.innerText = "Sign In";
-                footerText.innerHTML = "Don't have an account? <span onclick=\"showAuthPage('signup')\">Sign up</span>";
-            } else {
-                header.innerText = "Create your account";
-                submitBtn.innerText = "Sign Up";
-                footerText.innerHTML = "Already have an account? <span onclick=\"showAuthPage('signin')\">Sign in</span>";
-            }
+        function copyToClipboard() {
+            const text = document.getElementById('scriptBody').innerText;
+            if(!text) return;
+            navigator.clipboard.writeText(text);
+            alert('Text copied to clipboard successfully!');
         }
 
-        async function handleAuthSubmission() {
-            const email = document.getElementById('authEmail').value;
-            const password = document.getElementById('authPassword').value;
-            const btnText = document.getElementById('authSubmitBtn').innerText;
-            
-            const endpoint = btnText === 'Sign In' ? '/api/signin' : '/api/signup';
-
-            try {
-                const res = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-                const data = await res.json();
-                
-                if (data.success) {
-                    userIsSignedIn = true;
-                    document.getElementById('chatSidebar').style.display = 'flex';
-                    document.getElementById('authSectionLinks').style.display = 'none';
-                    showMainPage();
-                }
-            } catch (err) {
-                console.error("Auth Fail:", err);
-            }
+        function downloadOutputText() {
+            const text = document.getElementById('scriptBody').innerText;
+            if(!text) return;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const anchor = document.createElement('a');
+            anchor.download = 'scribe-ai-output.txt';
+            anchor.href = window.URL.createObjectURL(blob);
+            anchor.click();
+            window.URL.revokeObjectURL(anchor.href);
         }
 
         function startNewChat() {
-            document.getElementById('outputArea').style.display = 'none';
-            document.getElementById('welcomeDisplay').style.display = 'block';
+            document.getElementById('welcomeSection').style.display = 'block';
+            document.getElementById('resultArea').style.display = 'none';
+            document.getElementById('topicInput').value = '';
         }
 
-        function addToHistory(text) {
-            const list = document.getElementById('historyList');
-            const li = document.createElement('li');
-            li.className = "history-item";
-            li.innerText = text;
-            list.prepend(li);
+        function showMainPage() {
+            startNewChat();
         }
     </script>
 </body>
