@@ -1,10 +1,19 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import Groq from 'groq-sdk';
+import cors from 'cors'; // <-- CORS import kiya
 
 dotenv.config();
 
 const app = express();
+
+// CORS ko configure kiya taake aap ka frontend connect ho sake
+app.use(cors({
+    origin: 'https://vercel.app',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}));
+
 app.use(express.json());
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -25,6 +34,7 @@ app.post('/api/generate-script', async (req, res) => {
             model: 'llama-3.3-70b-versatile',
         });
 
+        // ERROR FIXED: Array index [0] dobara add kar diya hai
         const resultText = chatCompletion.choices[0]?.message?.content || '';
         return res.json({ success: true, script: resultText });
     } catch (error) {
@@ -45,6 +55,7 @@ app.post('/api/ask-question', async (req, res) => {
             model: 'llama-3.3-70b-versatile',
         });
 
+        // ERROR FIXED: Array index [0] yahan bhi sahi kar diya hai
         const resultText = chatCompletion.choices[0]?.message?.content || '';
         return res.json({ success: true, answer: resultText });
     } catch (error) {
@@ -62,9 +73,10 @@ app.get('/api/health', (req, res) => {
     return res.json({ status: "alive", message: "Backend structure is fully working on Vercel!" });
 });
 
-export default app;
+// Vercel serverless aur local dono ke liye exports aur port binding
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
 
+export default app;
